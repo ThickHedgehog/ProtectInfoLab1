@@ -1,10 +1,11 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow
 import mainWindow
-import changePasswordWindow
+import userWindow
 import adminWindow
 import aboutWindow
 import errorWindow
+import changePasswordWindow
 import sqlite3
 
 
@@ -110,7 +111,7 @@ class Ui_EnterWindow(QMainWindow):
                     userFlag = True
                     break
             if userFlag:
-                ChangeW = changePasswordWindow.Ui_ChangePasswordWindow(Login)
+                UserW = userWindow.Ui_UserWindow(Login)
                 if self.i > 1:
                     self.close()
                 else:
@@ -128,22 +129,24 @@ class Ui_EnterWindow(QMainWindow):
                         limited = cur.fetchall()
                         if banned[0][0] == 1:
                             errorW.textBrowser.setText('<html><body><table><tr><td align = "center" width = '
-                                                       '"100%">Вам бан!</td></tr></table></body></html>')
+                                                       '"100%">Аккаунт заблокирован!</td></tr></table></body></html>')
                             errorW.show()
                         else:
-                            if limited[0][0] == 1:
+                            if PasswordDB[0][0] == "":
+                                self.close()
+                            elif limited[0][0] == 1:
                                 if self.checkLimit(Password):
-                                    ChangeW.show()
+                                    UserW.show()
                                     self.close()
                                 else:
-                                    ChangeW.show()
+                                    UserW.close()
                                     errorW.textBrowser.setText('<html><body><table><tr><td align = "center" width = '
                                                                '"100%">Пароль не соответствует '
                                                                'ограничениям</td></tr></table></body></html>')
                                     errorW.show()
                                     self.close()
                             else:
-                                ChangeW.show()
+                                UserW.show()
                                 self.close()
                     else:
                         errorW.textBrowser.setText('<html><body><table><tr><td align = "center" width = '

@@ -1,6 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow
 import enterWindow
+import changePasswordWindow
 import sqlite3
 
 
@@ -36,27 +37,13 @@ class Ui_AdminWindow(QMainWindow):
                                                "background-color: rgb(162, 73, 0);")
         self.Registration_Button.setObjectName("Registration_Button")
 
-        self.Password = QtWidgets.QLineEdit(self.centralwidget)
-        self.Password.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.Password.setGeometry(QtCore.QRect(255, 220, 300, 40))
-        self.Password.setStyleSheet("font: 14pt \"Times New Roman\";\n"
-                                    "background-color: rgb(240, 217, 185);")
-        self.Password.setObjectName("Password")
-
-        self.Password_2 = QtWidgets.QLineEdit(self.centralwidget)
-        self.Password_2.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.Password_2.setGeometry(QtCore.QRect(255, 280, 300, 40))
-        self.Password_2.setStyleSheet("font: 14pt \"Times New Roman\";\n"
-                                      "background-color: rgb(240, 217, 185);")
-        self.Password_2.setObjectName("Password_2")
-
-        self.Conf_Button = QtWidgets.QPushButton(self.centralwidget)
-        self.Conf_Button.setGeometry(QtCore.QRect(330, 340, 150, 40))
-        self.Conf_Button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-        self.Conf_Button.setMouseTracking(True)
-        self.Conf_Button.setStyleSheet("font: 75 14pt \"Times New Roman\";\n"
-                                       "background-color: rgb(162, 73, 0);")
-        self.Conf_Button.setObjectName("Conf_Button")
+        self.Change_Button = QtWidgets.QPushButton(self.centralwidget)
+        self.Change_Button.setGeometry(QtCore.QRect(330, 220, 150, 40))
+        self.Change_Button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.Change_Button.setMouseTracking(True)
+        self.Change_Button.setStyleSheet("font: 75 14pt \"Times New Roman\";\n"
+                                         "background-color: rgb(162, 73, 0);")
+        self.Change_Button.setObjectName("Conf_Button")
 
         self.User = QtWidgets.QLabel(self.centralwidget)
         self.User.move(50, 390)
@@ -128,9 +115,7 @@ class Ui_AdminWindow(QMainWindow):
         self.label.setText(_translate("MainWindow", "Панель администратора"))
         self.Login.setPlaceholderText(_translate("MainWindow", "Логин"))
         self.Registration_Button.setText(_translate("MainWindow", "Создать"))
-        self.Password.setPlaceholderText(_translate("MainWindow", "Новый пароль"))
-        self.Password_2.setPlaceholderText(_translate("MainWindow", "Повторите пароль"))
-        self.Conf_Button.setText(_translate("MainWindow", "Подтвердить"))
+        self.Change_Button.setText(_translate("MainWindow", "Смена пароля"))
         self.Exit_Button.setText(_translate("MainWindow", "Выход"))
         self.Next_Button.setText(_translate("MainWindow", "Следующий"))
         self.Prev_Button.setText(_translate("MainWindow", "Предыдущий"))
@@ -139,7 +124,7 @@ class Ui_AdminWindow(QMainWindow):
 
     def addFunctionsClick(self):
         self.Registration_Button.clicked.connect(lambda: self.registration(self.Login.text()))
-        self.Conf_Button.clicked.connect(lambda: self.change(self.Password.text(), self.Password_2.text()))
+        self.Change_Button.clicked.connect(lambda: self.change())
         self.Next_Button.clicked.connect(lambda: self.nextUser())
         self.Prev_Button.clicked.connect(lambda: self.prevUser())
         self.Exit_Button.clicked.connect(lambda: self.exit())
@@ -164,16 +149,10 @@ class Ui_AdminWindow(QMainWindow):
         db.close()
         self.Login.setText("")
 
-    def change(self, Password, PasswordConf):
-        if Password != "" and Password == PasswordConf:
-            db = sqlite3.connect("database.db")
-            cur = db.cursor()
-            cur.execute("UPDATE Users SET Password = ? WHERE Login = ?", (Password, "ADMIN"))
-            db.commit()
-            cur.close()
-            db.close()
-            self.Password.setText("")
-            self.Password_2.setText("")
+    def change(self):
+        ChangeW = changePasswordWindow.Ui_ChangePasswordWindow("ADMIN")
+        ChangeW.show()
+        self.close()
 
     def firstUser(self):
         db = sqlite3.connect("database.db")
