@@ -82,7 +82,7 @@ class Ui_EnterWindow(QMainWindow):
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
 
-        self.addFunctionsClick(hashPassword)
+        self.addFunctionsClick(hashPassword, key, iv)
 
         self.fromTXTtoDecryptTXT(key, iv)
 
@@ -95,9 +95,10 @@ class Ui_EnterWindow(QMainWindow):
         self.label.setText(_translate("MainWindow", "Вход"))
         self.About_Button.setText(_translate("MainWindow", "О программе"))
 
-    def addFunctionsClick(self, hashPassword):
+    def addFunctionsClick(self, hashPassword, key, iv):
         self.Registration_Button.clicked.connect(lambda: self.registration())
-        self.Enter_Button.clicked.connect(lambda: self.enter(self.Login.text(), self.Password.text(), hashPassword))
+        self.Enter_Button.clicked.connect(
+            lambda: self.enter(self.Login.text(), self.Password.text(), hashPassword, key, iv))
         self.About_Button.clicked.connect(lambda: self.about())
 
     def registration(self):
@@ -105,10 +106,10 @@ class Ui_EnterWindow(QMainWindow):
         RegW.show()
         self.close()
 
-    def enter(self, Login, Password, hashPassword):
+    def enter(self, Login, Password, hashPassword, key, iv):
         db = sqlite3.connect("database.db")
         cur = db.cursor()
-        AdminW = adminWindow.Ui_AdminWindow(self.key, self.iv, hashPassword)
+        AdminW = adminWindow.Ui_AdminWindow(key, iv, hashPassword)
         errorW = errorWindow.Ui_ErrorWindow()
         userFlag = False
         if Login != "":
@@ -119,7 +120,7 @@ class Ui_EnterWindow(QMainWindow):
                     userFlag = True
                     break
             if userFlag:
-                UserW = userWindow.Ui_UserWindow(Login, self.key, self.iv, hashPassword)
+                UserW = userWindow.Ui_UserWindow(Login, key, iv, hashPassword)
                 if self.i > 1:
                     self.close()
                 else:
