@@ -21,8 +21,8 @@ class Ui_EnterWindow(QMainWindow):
 
         self.i = 0
         hash_object = hashlib.md5(bytes(hashPassword, 'ascii'))
-        self.key = pad(hash_object.digest(), AES.block_size)
-        self.iv = pad(b"myiv", AES.block_size)
+        key = pad(hash_object.digest(), AES.block_size)
+        iv = pad(b"myiv", AES.block_size)
 
         self.AboutW = aboutWindow.Ui_AboutWindow()
         self.setObjectName("MainWindow")
@@ -84,7 +84,7 @@ class Ui_EnterWindow(QMainWindow):
 
         self.addFunctionsClick(hashPassword)
 
-        self.fromTXTtoDecryptTXT()
+        self.fromTXTtoDecryptTXT(key, iv)
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
@@ -207,13 +207,14 @@ class Ui_EnterWindow(QMainWindow):
     def about(self):
         self.AboutW.show()
 
-    def fromTXTtoDecryptTXT(self):
+    @staticmethod
+    def fromTXTtoDecryptTXT(key, iv):
         with open("usersData.txt", "r") as f:
             text = f.read()
         text = bytes(text, 'ascii')
         text = binascii.unhexlify(text)
 
-        decrypted = crypt.decrypt(text, self.key, self.iv)
+        decrypted = crypt.decrypt(text, key, iv)
 
         with open("usersDataDecrypted.txt", "w+") as f:
             f.write(str(decrypted.decode('ascii')))
