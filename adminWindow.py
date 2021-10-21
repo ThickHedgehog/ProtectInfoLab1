@@ -3,10 +3,12 @@ from PyQt5.QtWidgets import QMainWindow
 import enterWindow
 import changePasswordWindow
 import sqlite3
+import crypt
+import binascii
 
 
 class Ui_AdminWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, key, iv, hashPassword):
         super(Ui_AdminWindow, self).__init__()
 
         self.setObjectName("MainWindow")
@@ -107,7 +109,7 @@ class Ui_AdminWindow(QMainWindow):
         QtCore.QMetaObject.connectSlotsByName(self)
 
         self.firstUser()
-        self.addFunctionsClick()
+        self.addFunctionsClick(key, iv, hashPassword)
         self.nowUserID = 1
 
     def retranslateUi(self):
@@ -122,16 +124,16 @@ class Ui_AdminWindow(QMainWindow):
         self.Ban_Text.setText(_translate("MainWindow", "Забанить"))
         self.Limit_Text.setText(_translate("MainWindow", "Установить ограничения"))
 
-    def addFunctionsClick(self):
-        self.Registration_Button.clicked.connect(lambda: self.registration(self.Login.text()))
-        self.Change_Button.clicked.connect(lambda: self.change())
+    def addFunctionsClick(self, key, iv, hashPassword):
+        self.Registration_Button.clicked.connect(lambda: self.registration(self.Login.text(), key, iv))
+        self.Change_Button.clicked.connect(lambda: self.change(key, iv, hashPassword))
         self.Next_Button.clicked.connect(lambda: self.nextUser())
         self.Prev_Button.clicked.connect(lambda: self.prevUser())
-        self.Exit_Button.clicked.connect(lambda: self.exit())
-        self.Ban.stateChanged.connect(lambda: self.ban())
-        self.Limit.stateChanged.connect(lambda: self.limit())
+        self.Exit_Button.clicked.connect(lambda: self.exit(hashPassword))
+        self.Ban.stateChanged.connect(lambda: self.ban(key, iv))
+        self.Limit.stateChanged.connect(lambda: self.limit(key, iv))
 
-    def registration(self, Login):
+    def registration(self, Login, key, iv):
         db = sqlite3.connect("database.db")
         cur = db.cursor()
         cur.execute("CREATE TABLE IF NOT EXISTS Users(ID INT, Login TEXT, Password TEXT, Banned INT, Limited INT)")
@@ -149,8 +151,10 @@ class Ui_AdminWindow(QMainWindow):
         db.close()
         self.Login.setText("")
 
-    def change(self):
-        ChangeW = changePasswordWindow.Ui_ChangePasswordWindow("ADMIN")
+        self.fromDBtoTXT(key, iv)
+
+    def change(self, key, iv, hashPassword):
+        ChangeW = changePasswordWindow.Ui_ChangePasswordWindow("ADMIN", key, iv, hashPassword)
         ChangeW.show()
         self.close()
 
@@ -181,7 +185,7 @@ class Ui_AdminWindow(QMainWindow):
         else:
             self.Limit.setChecked(False)
 
-    def ban(self):
+    def ban(self, key, iv):
         db = sqlite3.connect("database.db")
         cur = db.cursor()
 
@@ -202,7 +206,9 @@ class Ui_AdminWindow(QMainWindow):
         cur.close()
         db.close()
 
-    def limit(self):
+        self.fromDBtoTXT(key, iv)
+
+    def limit(self, key, iv):
         db = sqlite3.connect("database.db")
         cur = db.cursor()
 
@@ -215,6 +221,8 @@ class Ui_AdminWindow(QMainWindow):
 
         cur.close()
         db.close()
+
+        self.fromDBtoTXT(key, iv)
 
     def nextUser(self):
         db = sqlite3.connect("database.db")
@@ -278,7 +286,40 @@ class Ui_AdminWindow(QMainWindow):
             else:
                 self.Limit.setChecked(False)
 
-    def exit(self):
-        EnterW = enterWindow.Ui_EnterWindow()
+    def exit(self, hashPassword):
+        EnterW = enterWindow.Ui_EnterWindow(hashPassword)
         EnterW.show()
         self.close()
+
+    @staticmethod
+    def fromDBtoTXT(key, iv):
+        db = sqlite3.connect("database.db")
+
+        cur = db.cursor()
+
+        cur.execute("SELECT * FROM Users")
+        data = cur.fetchall()
+
+        cur.close()
+        db.close()
+
+        dataStr = ""
+
+        for index in data:
+            dataStr += str(index) + '\n'
+
+        encrypted = crypt.encrypt(dataStr, key, iv)
+
+        with open("usersData.txt", "w+") as f:
+            hexEncrypted = binascii.hexlify(encrypted)
+            f.write(str(hexEncrypted)[2:-1])
+
+        with open("usersData.txt", "r") as f:
+            text = f.read()
+        text = bytes(text, 'ascii')
+        text = binascii.unhexlify(text)
+
+        decrypted = crypt.decrypt(text, key, iv)
+
+        with open("usersDataDecrypted.txt", "w+") as f:
+            f.write(str(decrypted.decode('ascii')))

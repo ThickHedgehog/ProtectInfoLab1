@@ -1,9 +1,13 @@
 from PyQt5 import QtWidgets
 import sys
-import enterWindow
+import os
+import decryptWindow
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
-    ui = enterWindow.Ui_EnterWindow()
+    ui = decryptWindow.Ui_DecryptWindow()
     ui.show()
-    sys.exit(app.exec_())
+    ret = app.exec_()
+    if ret == 0:
+        os.remove("usersDataDecrypted.txt")
+        sys.exit(ret)

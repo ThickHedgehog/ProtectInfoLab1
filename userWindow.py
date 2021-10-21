@@ -6,7 +6,7 @@ import changePasswordWindow
 
 
 class Ui_UserWindow(QMainWindow):
-    def __init__(self, Login):
+    def __init__(self, Login, key, iv, hashPassword):
         super(Ui_UserWindow, self).__init__()
 
         self.setObjectName("MainWindow")
@@ -47,8 +47,8 @@ class Ui_UserWindow(QMainWindow):
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
 
-        self.firstEnter(Login)
-        self.addFunctionsClick(Login)
+        self.firstEnter(Login, key, iv, hashPassword)
+        self.addFunctionsClick(Login, key, iv, hashPassword)
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
@@ -56,11 +56,11 @@ class Ui_UserWindow(QMainWindow):
         self.Exit_Button.setText(_translate("MainWindow", "Выход"))
         self.label.setText(_translate("MainWindow", "Аккаунт"))
 
-    def addFunctionsClick(self, Login):
-        self.Exit_Button.clicked.connect(lambda: self.exit())
-        self.Change_Button.clicked.connect(lambda: self.change(Login))
+    def addFunctionsClick(self, Login, key, iv, hashPassword):
+        self.Exit_Button.clicked.connect(lambda: self.exit(hashPassword))
+        self.Change_Button.clicked.connect(lambda: self.change(Login, key, iv, hashPassword))
 
-    def firstEnter(self, Login):
+    def firstEnter(self, Login, key, iv, hashPassword):
         db = sqlite3.connect("database.db")
         cur = db.cursor()
         cur.execute("SELECT Password FROM Users WHERE Login = ?", (Login,))
@@ -70,7 +70,7 @@ class Ui_UserWindow(QMainWindow):
         cur.execute("SELECT Banned FROM Users WHERE Login = ?", (Login,))
         Banned = cur.fetchall()
         if PasswordDB[0][0] == "" or Limited[0][0] and Banned[0][0] == 0:
-            ChangeW = changePasswordWindow.Ui_ChangePasswordWindow(Login)
+            ChangeW = changePasswordWindow.Ui_ChangePasswordWindow(Login, key, iv, hashPassword)
             ChangeW.Conf_Button.setText("Установить")
             ChangeW.Exit_Button.hide()
             ChangeW.Old_Password.hide()
@@ -79,12 +79,12 @@ class Ui_UserWindow(QMainWindow):
         cur.close()
         db.close()
 
-    def change(self, Login):
-        ChangeW = changePasswordWindow.Ui_ChangePasswordWindow(Login)
+    def change(self, Login, key, iv, hashPassword):
+        ChangeW = changePasswordWindow.Ui_ChangePasswordWindow(Login, key, iv, hashPassword)
         ChangeW.show()
         self.close()
 
-    def exit(self):
-        EnterW = enterWindow.Ui_EnterWindow()
+    def exit(self, hashPassword):
+        EnterW = enterWindow.Ui_EnterWindow(hashPassword)
         EnterW.show()
         self.close()

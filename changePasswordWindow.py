@@ -1,5 +1,7 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow
+import crypt
+import binascii
 import sqlite3
 
 import adminWindow
@@ -7,7 +9,7 @@ import userWindow
 
 
 class Ui_ChangePasswordWindow(QMainWindow):
-    def __init__(self, Login):
+    def __init__(self, Login, key, iv, hashPassword):
         super(Ui_ChangePasswordWindow, self).__init__()
 
         self.setObjectName("MainWindow")
@@ -69,7 +71,7 @@ class Ui_ChangePasswordWindow(QMainWindow):
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
 
-        self.addFunctionsClick(Login)
+        self.addFunctionsClick(Login, key, iv, hashPassword)
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
@@ -80,12 +82,13 @@ class Ui_ChangePasswordWindow(QMainWindow):
         self.Password_2.setPlaceholderText(_translate("MainWindow", "Повторите пароль"))
         self.label.setText(_translate("MainWindow", "Смена пароля"))
 
-    def addFunctionsClick(self, Login):
+    def addFunctionsClick(self, Login, key, iv, hashPassword):
         self.Conf_Button.clicked.connect(
-            lambda: self.change(Login, self.Old_Password.text(), self.Password.text(), self.Password_2.text()))
-        self.Exit_Button.clicked.connect(lambda: self.exit(Login))
+            lambda: self.change(Login, self.Old_Password.text(), self.Password.text(), self.Password_2.text(), key, iv,
+                                hashPassword))
+        self.Exit_Button.clicked.connect(lambda: self.exit(Login, key, iv, hashPassword))
 
-    def change(self, Login, OldPassword, Password, PasswordConf):
+    def change(self, Login, OldPassword, Password, PasswordConf, key, iv, hashPassword):
         db = sqlite3.connect("database.db")
         cur = db.cursor()
         cur.execute("SELECT Password FROM Users WHERE Login = ?", (Login,))
@@ -101,15 +104,50 @@ class Ui_ChangePasswordWindow(QMainWindow):
             self.Password.setText("")
             self.Password_2.setText("")
             if PasswordDB[0][0] == "":
-                UserW = userWindow.Ui_UserWindow(Login)
+                UserW = userWindow.Ui_UserWindow(Login, key, iv, hashPassword)
                 UserW.show()
                 self.close()
 
-    def exit(self, Login):
+        self.fromDBtoTXT(key, iv)
+
+    def exit(self, Login, key, iv, hashPassword):
         if Login == "ADMIN":
-            AdminW = adminWindow.Ui_AdminWindow()
+            AdminW = adminWindow.Ui_AdminWindow(key, iv, hashPassword)
             AdminW.show()
         else:
-            UserW = userWindow.Ui_UserWindow(Login)
+            UserW = userWindow.Ui_UserWindow(Login, key, iv, hashPassword)
             UserW.show()
         self.close()
+
+    @staticmethod
+    def fromDBtoTXT(key, iv):
+        db = sqlite3.connect("database.db")
+
+        cur = db.cursor()
+
+        cur.execute("SELECT * FROM Users")
+        data = cur.fetchall()
+
+        cur.close()
+        db.close()
+
+        dataStr = ""
+
+        for index in data:
+            dataStr += str(index) + '\n'
+
+        encrypted = crypt.encrypt(dataStr, key, iv)
+
+        with open("usersData.txt", "w+") as f:
+            hexEncrypted = binascii.hexlify(encrypted)
+            f.write(str(hexEncrypted)[2:-1])
+
+        with open("usersData.txt", "r") as f:
+            text = f.read()
+        text = bytes(text, 'ascii')
+        text = binascii.unhexlify(text)
+
+        decrypted = crypt.decrypt(text, key, iv)
+
+        with open("usersDataDecrypted.txt", "w+") as f:
+            f.write(str(decrypted.decode('ascii')))

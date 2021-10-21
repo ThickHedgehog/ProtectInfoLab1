@@ -1,19 +1,28 @@
+import sqlite3
+import binascii
+import hashlib
+
+from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow
+
+import aboutWindow
+import adminWindow
+import errorWindow
 import mainWindow
 import userWindow
-import adminWindow
-import aboutWindow
-import errorWindow
-import changePasswordWindow
-import sqlite3
+import crypt
 
 
 class Ui_EnterWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, hashPassword):
         super(Ui_EnterWindow, self).__init__()
 
         self.i = 0
+        hash_object = hashlib.md5(bytes(hashPassword, 'ascii'))
+        self.key = pad(hash_object.digest(), AES.block_size)
+        self.iv = pad(b"myiv", AES.block_size)
 
         self.AboutW = aboutWindow.Ui_AboutWindow()
         self.setObjectName("MainWindow")
@@ -69,14 +78,13 @@ class Ui_EnterWindow(QMainWindow):
         self.About_Button.setObjectName("Enter_Button")
 
         self.setCentralWidget(self.centralwidget)
-        self.statusbar = QtWidgets.QStatusBar(self)
-        self.statusbar.setObjectName("statusbar")
-        self.setStatusBar(self.statusbar)
 
         self.retranslateUi()
         QtCore.QMetaObject.connectSlotsByName(self)
 
-        self.addFunctionsClick()
+        self.addFunctionsClick(hashPassword)
+
+        self.fromTXTtoDecryptTXT()
 
     def retranslateUi(self):
         _translate = QtCore.QCoreApplication.translate
@@ -87,9 +95,9 @@ class Ui_EnterWindow(QMainWindow):
         self.label.setText(_translate("MainWindow", "Вход"))
         self.About_Button.setText(_translate("MainWindow", "О программе"))
 
-    def addFunctionsClick(self):
+    def addFunctionsClick(self, hashPassword):
         self.Registration_Button.clicked.connect(lambda: self.registration())
-        self.Enter_Button.clicked.connect(lambda: self.enter(self.Login.text(), self.Password.text()))
+        self.Enter_Button.clicked.connect(lambda: self.enter(self.Login.text(), self.Password.text(), hashPassword))
         self.About_Button.clicked.connect(lambda: self.about())
 
     def registration(self):
@@ -97,10 +105,10 @@ class Ui_EnterWindow(QMainWindow):
         RegW.show()
         self.close()
 
-    def enter(self, Login, Password):
+    def enter(self, Login, Password, hashPassword):
         db = sqlite3.connect("database.db")
         cur = db.cursor()
-        AdminW = adminWindow.Ui_AdminWindow()
+        AdminW = adminWindow.Ui_AdminWindow(self.key, self.iv, hashPassword)
         errorW = errorWindow.Ui_ErrorWindow()
         userFlag = False
         if Login != "":
@@ -111,7 +119,7 @@ class Ui_EnterWindow(QMainWindow):
                     userFlag = True
                     break
             if userFlag:
-                UserW = userWindow.Ui_UserWindow(Login)
+                UserW = userWindow.Ui_UserWindow(Login, self.key, self.iv, hashPassword)
                 if self.i > 1:
                     self.close()
                 else:
@@ -198,3 +206,14 @@ class Ui_EnterWindow(QMainWindow):
 
     def about(self):
         self.AboutW.show()
+
+    def fromTXTtoDecryptTXT(self):
+        with open("usersData.txt", "r") as f:
+            text = f.read()
+        text = bytes(text, 'ascii')
+        text = binascii.unhexlify(text)
+
+        decrypted = crypt.decrypt(text, self.key, self.iv)
+
+        with open("usersDataDecrypted.txt", "w+") as f:
+            f.write(str(decrypted.decode('ascii')))
