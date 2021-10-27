@@ -63,7 +63,7 @@ class Ui_AdminWindow(QMainWindow):
         self.Ban_Text.setStyleSheet("font: 75 14pt \"Times New Roman\";\n"
                                     "color: rgb(255, 179, 134);")
         self.Ban_Text.setObjectName("Ban_Text")
-        self.Ban_Text.setFixedWidth(100)
+        self.Ban_Text.setFixedWidth(120)
 
         self.Limit = QtWidgets.QCheckBox(self.centralwidget)
         self.Limit.move(500, 390)
@@ -121,7 +121,7 @@ class Ui_AdminWindow(QMainWindow):
         self.Exit_Button.setText(_translate("MainWindow", "Выход"))
         self.Next_Button.setText(_translate("MainWindow", "Следующий"))
         self.Prev_Button.setText(_translate("MainWindow", "Предыдущий"))
-        self.Ban_Text.setText(_translate("MainWindow", "Забанить"))
+        self.Ban_Text.setText(_translate("MainWindow", "Заблокировать"))
         self.Limit_Text.setText(_translate("MainWindow", "Установить ограничения"))
 
     def addFunctionsClick(self, key, iv, hashPassword):

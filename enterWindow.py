@@ -13,6 +13,7 @@ import errorWindow
 import mainWindow
 import userWindow
 import crypt
+from checkLimit import checkLimit
 
 
 class Ui_EnterWindow(QMainWindow):
@@ -144,7 +145,7 @@ class Ui_EnterWindow(QMainWindow):
                             if PasswordDB[0][0] == "":
                                 self.close()
                             elif limited[0][0] == 1:
-                                if self.checkLimit(Password):
+                                if checkLimit(Password):
                                     UserW.show()
                                     self.close()
                                 else:
@@ -175,35 +176,6 @@ class Ui_EnterWindow(QMainWindow):
         db.close()
         self.Login.setText("")
         self.Password.setText("")
-
-    @staticmethod
-    def checkLimit(Password):
-        alf = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        dig = ",.?!;:"
-        letter = True
-        digit = False
-        flag = True
-
-        for i in Password:
-            if letter is True and digit is False:
-                if i in alf:
-                    letter = False
-                    digit = True
-                    continue
-                else:
-                    flag = False
-                    break
-
-            if letter is False and digit is True:
-                if i in dig:
-                    letter = True
-                    digit = False
-                    continue
-                else:
-                    flag = False
-                    break
-
-        return flag
 
     def about(self):
         self.AboutW.show()

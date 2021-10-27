@@ -6,6 +6,8 @@ import sqlite3
 
 import adminWindow
 import userWindow
+import enterWindow
+from checkLimit import checkLimit
 
 
 class Ui_ChangePasswordWindow(QMainWindow):
@@ -93,20 +95,23 @@ class Ui_ChangePasswordWindow(QMainWindow):
         cur = db.cursor()
         cur.execute("SELECT Password FROM Users WHERE Login = ?", (Login,))
         PasswordDB = cur.fetchall()
+        cur.execute("SELECT Limited FROM Users WHERE Login = ?", (Login,))
+        LimitDB = cur.fetchall()
         if Password == PasswordConf and PasswordDB[0][0] == OldPassword:
-            cur.execute("SELECT Password FROM Users WHERE Login = ?", (Login,))
-            PasswordDB = cur.fetchall()
-            cur.execute("UPDATE Users SET Password = ? WHERE Login = ?", (Password, Login))
-            db.commit()
-            cur.close()
-            db.close()
-            self.Old_Password.setText("")
-            self.Password.setText("")
-            self.Password_2.setText("")
-            if PasswordDB[0][0] == "":
-                UserW = userWindow.Ui_UserWindow(Login, key, iv, hashPassword)
-                UserW.show()
-                self.close()
+            if (LimitDB[0][0] and checkLimit(Password)) or (LimitDB[0][0] == 0):
+                cur.execute("SELECT Password FROM Users WHERE Login = ?", (Login,))
+                PasswordDB = cur.fetchall()
+                cur.execute("UPDATE Users SET Password = ? WHERE Login = ?", (Password, Login))
+                db.commit()
+                cur.close()
+                db.close()
+                self.Old_Password.setText("")
+                self.Password.setText("")
+                self.Password_2.setText("")
+                if PasswordDB[0][0] == "" or LimitDB[0][0]:
+                    EnterW = enterWindow.Ui_EnterWindow(hashPassword)
+                    EnterW.show()
+                    self.close()
 
         self.fromDBtoTXT(key, iv)
 

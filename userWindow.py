@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QMainWindow
 import enterWindow
 import sqlite3
 import changePasswordWindow
+from checkLimit import checkLimit
 
 
 class Ui_UserWindow(QMainWindow):
@@ -17,7 +18,7 @@ class Ui_UserWindow(QMainWindow):
         self.centralwidget.setObjectName("centralwidget")
 
         self.label = QtWidgets.QLabel(self.centralwidget)
-        self.label.move(335, 50)
+        self.label.move(360, 50)
         self.label.setStyleSheet("font: 75 18pt \"Times New Roman\";\n"
                                  "color: rgb(255, 179, 134);")
         self.label.setObjectName("label")
@@ -69,11 +70,10 @@ class Ui_UserWindow(QMainWindow):
         Limited = cur.fetchall()
         cur.execute("SELECT Banned FROM Users WHERE Login = ?", (Login,))
         Banned = cur.fetchall()
-        if PasswordDB[0][0] == "" or Limited[0][0] and Banned[0][0] == 0:
+        if PasswordDB[0][0] == "" or (Limited[0][0] and Banned[0][0] == 0 and checkLimit(PasswordDB[0][0]) != True):
             ChangeW = changePasswordWindow.Ui_ChangePasswordWindow(Login, key, iv, hashPassword)
             ChangeW.Conf_Button.setText("Установить")
             ChangeW.Exit_Button.hide()
-            ChangeW.Old_Password.hide()
             ChangeW.show()
             self.close()
         cur.close()
